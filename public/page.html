@@ -345,35 +345,49 @@
 
     // Initialisation de la reconnaissance vocale et des champs de saisie
     document.addEventListener('DOMContentLoaded', function() {
-        inputs = document.querySelectorAll('input[type="text"]');
-        initialiserMicrophone(); // Demande l'accès au micro pour smartphone et autres
+    inputs = document.querySelectorAll('input[type="text"]');
+    initialiserMicrophone(); // Demande l'accès au micro pour smartphone et autres
 
-        inputs.forEach((input, index) => {
-            input.addEventListener('focus', () => {
-                currentInputIndex = index;
-            });
-            input.addEventListener('input', function() {
-                speakValue(this.value);
-            });
-            input.addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
-                    let nextInput = findNextVisibleInput(input.parentNode);
+    // Activer les haut-parleurs après la première interaction utilisateur
+    document.body.addEventListener('click', unlockAudioContext, { once: true });
+    document.body.addEventListener('touchstart', unlockAudioContext, { once: true });
+
+    inputs.forEach((input, index) => {
+        input.addEventListener('focus', () => {
+            currentInputIndex = index;
+        });
+        input.addEventListener('input', function() {
+            speakValue(this.value); // Prononcer la valeur
+        });
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                let nextInput = findNextVisibleInput(input.parentNode);
+                if (nextInput) {
+                    nextInput.focus();
+                    nextInput.select();
+                } else {
+                    const targetRowIndex = input.closest('tr').rowIndex;
+                    const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
+                    const nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
                     if (nextInput) {
                         nextInput.focus();
                         nextInput.select();
-                    } else {
-                        const targetRowIndex = input.closest('tr').rowIndex;
-                        const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
-                        const nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
-                        if (nextInput) {
-                            nextInput.focus();
-                            nextInput.select();
-                        }
                     }
                 }
-            });
+            }
         });
     });
+});
+
+// Fonction pour débloquer l'audio sur les appareils mobiles après la première interaction utilisateur
+function unlockAudioContext() {
+    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.getVoices().length > 0) {
+        console.log("Synthèse vocale débloquée.");
+    } else {
+        console.log("Synthèse vocale indisponible.");
+    }
+}
+
 
     // Fonctions pour naviguer entre les champs de saisie
     function findNextVisibleInput(startCell) {
