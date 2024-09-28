@@ -158,6 +158,7 @@
 <script>
     let currentInputIndex = 0;
     let inputs;
+    let isProcessingCommand = false;  // Variable pour éviter les duplications
 
     // Clé API Azure et région
     const subscriptionKey = "4d084ab2c53e4dbf9e491c0fe16507d6"; 
@@ -179,12 +180,13 @@
         recognizer.startContinuousRecognitionAsync(); 
 
         recognizer.recognized = function (s, event) {
+            if (isProcessingCommand) return;  // Éviter les duplications
             const command = event.result.text.trim();
             console.log('Résultat de la reconnaissance vocale:', command);
 
             // Si la commande contient 1 ou 2, traiter immédiatement
             if (command.toLowerCase().includes("un") || command.toLowerCase().includes("une") || command.toLowerCase().includes("deux") || command.toLowerCase().includes("de")) {
-                processImmediateCommand(command);  // Processus accéléré
+                processImmediateCommand(command);
             } else {
                 processVoiceCommand(command);  // Processus normal
             }
@@ -216,23 +218,22 @@
 
     // Fonction pour traiter les commandes prioritaires (1 et 2)
     function processImmediateCommand(command) {
+        isProcessingCommand = true;  // Empêcher les commandes en double
         console.log("Commande prioritaire pour les valeurs 1 et 2:", command);
         const spokenOne = ["un", "une"];
         const spokenTwo = ["deux", "de"];
 
         if (spokenOne.some(term => command.toLowerCase().includes(term))) {
             fillInputFields([1]);
-            return;
-        }
-
-        if (spokenTwo.some(term => command.toLowerCase().includes(term))) {
+        } else if (spokenTwo.some(term => command.toLowerCase().includes(term))) {
             fillInputFields([2]);
-            return;
         }
+        setTimeout(() => { isProcessingCommand = false; }, 500);  // Délai pour éviter les doublons
     }
 
     // Fonction pour traiter la commande vocale générale
     function processVoiceCommand(command) {
+        isProcessingCommand = true;  // Bloquer les autres commandes pendant le traitement
         console.log('Commande vocale reçue:', command);
 
         // Vérifier si la commande inclut "saignement", "saignements" ou "plaque"
@@ -254,43 +255,28 @@
                 command.toLowerCase().includes("méssial")) {
                 handleCheckboxCommand(command, type);
             }
-            return;
-        }
-
-        // Si la commande inclut "un", forcer à 1
-        const spokenOne = ["un", "une", "premier", "in", "hein", "um", "hun", "hin"];
-        if (spokenOne.some(term => command.toLowerCase().includes(term))) {
-            fillInputFields([1]);
-            return;
-        }
-
-        // Si la commande inclut "deux", forcer à 2
-        const spokenTwo = ["deux", "de"];
-        if (spokenTwo.some(term => command.toLowerCase().includes(term))) {
-            fillInputFields([2]);
-            return;
-        }
-
-        // Si plusieurs chiffres sont trouvés
-        const values = command.match(/\d+/g);
-        if (values) {
-            fillInputFields(values);
         } else {
-            console.log('Aucune valeur trouvée dans la commande.');
+            // Si plusieurs chiffres sont trouvés
+            const values = command.match(/\d+/g);
+            if (values) {
+                fillInputFields(values);
+            } else {
+                console.log('Aucune valeur trouvée dans la commande.');
+            }
         }
+
+        setTimeout(() => { isProcessingCommand = false; }, 500);  // Relâcher après un court délai
     }
 
     // Fonction pour remplir les champs de saisie
     function fillInputFields(values) {
-        values.forEach(value => {
-            const activeElement = document.activeElement;
-            if (activeElement && activeElement.tagName === 'INPUT' && activeElement.type === 'text') {
-                activeElement.value = value;
-                activeElement.dispatchEvent(new Event('input'));
-                speakValue(value);
-                simulateEnterKeyPress(activeElement);
-            }
-        });
+        const activeElement = document.activeElement;  // Obtenez l'élément actif au moment de la reconnaissance
+        if (activeElement && activeElement.tagName === 'INPUT' && activeElement.type === 'text') {
+            activeElement.value = values[0];  // Remplir le champ uniquement avec la première valeur
+            activeElement.dispatchEvent(new Event('input'));
+            speakValue(values[0]);
+            simulateEnterKeyPress(activeElement);
+        }
     }
 
     // Simuler la touche "Entrée"
