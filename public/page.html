@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="stylepage.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Encode+Sans+Expanded:wght@300&family=Inter:wght@200;300;700&family=Quicksand&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.0/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle.js"></script> <!--API Speech to Text Microsoft-->
+    <script type="module" src="Chartingpage.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <title>Assistance Vocale</title>
+</head>
+<body onload="initialiserMicrophone()">
+    <!--Création d'une navbar en Bootstrap-->
+              <header class="py-4">
+                <nav class="navbar navbar-expand-md fixed-top navbar-light bg-light"> <!--avec navbar-expand (navbar complète) au breakpoint md-->
+                  <div class="container">
+                    <!--Mise en place de la barre-->
+                    <a class="navbar-brand text-uppercase fw-bold" href="#">
+                        <span class="bg-gradient p-1 rounded-3 text-light" style="background-color: rgb(131, 68, 232);">
+                          Statut <!--"Statut" encadré par une span pour ajout d'un background-->
+                        </span> 
+                        <span class="d-none d-sm-inline">Parodontal</span>
+                    </a>
+                        <!-- Ajout d'un ID au bouton hamburger -->
+                        <button class="navbar-toggler" id="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> 
+                        <span class="navbar-toggler-icon"></span>
+                        </button>
+
+                        <!-- Ajout du contenu de la nav-bar et leur localisation respensive (collapse)-->
+                        <div class="collapse navbar-collapse justify-content-end my-2" id="navbarNav"> 
+                        <!--Création d'une liste = horizontal grand écran/vertical petit écran-->
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                            <button class="telechargement-btn">Télécharger</button>
+                            </li> <!--bouton télécharger-->
+                            <li class="nav-item">
+                            <button class="imprimante-btn">Imprimer</button>
+                            </li> <!--bouton imprimer-->
+                        </ul>
+                        </div>
+                  </div>
+                </nav>
+              </header>
+    <!-- Partie Charting -->
+    <section id="Charting" class="py-5 bg-light">
+        <div class="fond" style="background-color: rgba(239, 240, 255, 0.91); border-radius: 16px">
+            <div class="container my-5 py5">
+                <div id="dentmaxvesti">
+                    <div id="graph1" class="graph-container"><canvas></canvas></div>
+                    <div class="row align-items-center">
+                        <div class="col-12 col-md-6">
+                            <section class="dents1"></section>
+                        </div>
+                    </div>
+                </div>
+                <div id="table-container" style="padding: 1%;"></div> <!-- Tableau dents maxillaires vestibulaire -->
+                <div id="dentmandvesti">
+                    <div class="row align-items-center">
+                        <div class="col-12 col-md-6">
+                            <section class="dents2"></section>
+                        </div>
+                    </div>
+                    <div class="inverted-y-axis-container">
+                        <div id="graph2" class="graph-container"><canvas></canvas></div>
+                    </div>
+                </div>
+                <div id="second-table-container" style="padding: 1%;"></div> <!-- Tableau dents mandibulaires vestibulaire -->
+                <div id="dentmaxpal">
+                    <div id="graph3" class="graph-container"><canvas></canvas></div>
+                    <div class="row align-items-center">
+                        <div class="col-12 col-md-6">
+                            <section class="dents3"></section>
+                        </div>
+                    </div>
+                    <div id="third-table-container" style="padding: 1%;"></div> <!-- Tableau dents maxillaires palatin -->
+                    <div id="dentmandling">
+                        <div class="row align-items-center">
+                            <div class="col-12 col-md-6">
+                                <section class="dents4"></section>
+                            </div>
+                            <div class="inverted-y-axis-container">
+                                <div id="graph4" class="graph-container"><canvas></canvas></div>
+                            </div>
+                        </div>
+                        <div id="quatre-table-container" style="padding: 1%;"></div> <!-- Tableau dents mandibulaires linguale -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+    <!-- Comportement du scroll -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.graph-container');
+            let currentSectionIndex = getClosestSectionIndex(); // Initialiser avec la section actuellement visible
+            let scrollTimeout = null;
+
+            function getClosestSectionIndex() {
+                let closestIndex = 0;
+                let closestDist = Infinity;
+                sections.forEach((section, index) => {
+                    const dist = Math.abs(window.pageYOffset - section.offsetTop);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestIndex = index;
+                    }
+                });
+                return closestIndex;
+            }
+
+            function scrollToSection(index) {
+                if (index >= 0 && index < sections.length) {
+                    window.scrollTo({
+                        top: sections[index].offsetTop,
+                        behavior: 'smooth'
+                    });
+                    currentSectionIndex = index; // Mise à jour de l'index de la section actuelle après le défilement
+                }
+            }
+
+            window.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout); // Annuler tout timeout précédent
+                scrollTimeout = setTimeout(() => {
+                    const newClosestSectionIndex = getClosestSectionIndex();
+                    // Vérifier si la position actuelle de défilement est plus proche d'une autre section
+                    if (newClosestSectionIndex !== currentSectionIndex) {
+                        // Si la position de défilement est plus proche d'une autre section, ajuster la vue
+                        scrollToSection(newClosestSectionIndex);
+                    } else {
+                        // Si la position de défilement est toujours plus proche de la section actuelle, réajuster la vue
+                        scrollToSection(currentSectionIndex);
+                    }
+                }, 100); // Délai avant de considérer le défilement comme terminé et de prendre une décision
+            });
+        });
+    </script>
+
+<script>
+    let currentInputIndex = 0;
+    let inputs;
+
+    // Clé API Azure et région
+    const subscriptionKey = "4d084ab2c53e4dbf9e491c0fe16507d6"; 
+    const serviceRegion = "francecentral"; 
+
+    // Liste des numéros parlés autorisés
+    const allowedNumbers = [
+        "zéro", "un", "une", "deux", "de", "premier", "in", "hein", "um", "hun", "hin", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf",
+        "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf", "vingt"
+    ];
+
+    // Fonction pour démarrer la reconnaissance vocale avec Microsoft Azure Speech to Text
+    function startVoiceRecognition() {
+        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion);
+        speechConfig.speechRecognitionLanguage = "fr-FR"; 
+        const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput(); 
+        const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+
+        recognizer.startContinuousRecognitionAsync(); 
+
+        recognizer.recognized = function (s, event) {
+            const command = event.result.text.trim();
+            console.log('Résultat de la reconnaissance vocale:', command);
+
+            // Si la commande contient 1 ou 2, traiter immédiatement
+            if (command.toLowerCase().includes("un") || command.toLowerCase().includes("une") || command.toLowerCase().includes("deux") || command.toLowerCase().includes("de")) {
+                processImmediateCommand(command);  // Processus accéléré
+            } else {
+                processVoiceCommand(command);  // Processus normal
+            }
+        };
+
+        recognizer.onerror = function(event) {
+            console.error('Erreur de reconnaissance vocale:', event.error);
+        };
+
+        recognizer.onend = function() {
+            setTimeout(() => {
+                recognizer.start();
+            }, 50); // Délai réduit pour plus de fluidité
+        };
+    }
+
+    // Fonction pour traiter les commandes prioritaires (1 et 2)
+    function processImmediateCommand(command) {
+        console.log("Commande prioritaire pour les valeurs 1 et 2:", command);
+        const spokenOne = ["un", "une"];
+        const spokenTwo = ["deux", "de"];
+
+        if (spokenOne.some(term => command.toLowerCase().includes(term))) {
+            fillInputFields([1]);
+            return;
+        }
+
+        if (spokenTwo.some(term => command.toLowerCase().includes(term))) {
+            fillInputFields([2]);
+            return;
+        }
+    }
+
+    // Fonction pour traiter la commande vocale générale
+    function processVoiceCommand(command) {
+        console.log('Commande vocale reçue:', command);
+
+        // Vérifier si la commande inclut "saignement", "saignements" ou "plaque"
+        if (command.toLowerCase().includes("saignement") || command.toLowerCase().includes("saignements") || command.toLowerCase().includes("plaque")) {
+            const type = command.toLowerCase().includes("saignement") || command.toLowerCase().includes("saignements") ? "saignement" : "plaque";
+
+            // Vérifier les positions comme palatin, mésio, etc.
+            if (command.toLowerCase().includes("palatin") || 
+                command.toLowerCase().includes("mésio") || 
+                command.toLowerCase().includes("vestibulaire") || 
+                command.toLowerCase().includes("disto") || 
+                command.toLowerCase().includes("mésial") || 
+                command.toLowerCase().includes("distal") || 
+                command.toLowerCase().includes("méziale") || 
+                command.toLowerCase().includes("métiale") || 
+                command.toLowerCase().includes("méssiale") || 
+                command.toLowerCase().includes("mézial") || 
+                command.toLowerCase().includes("métial") || 
+                command.toLowerCase().includes("méssial")) {
+                handleCheckboxCommand(command, type);
+            }
+            return;
+        }
+
+        // Si la commande inclut "un", forcer à 1
+        const spokenOne = ["un", "une", "premier", "in", "hein", "um", "hun", "hin"];
+        if (spokenOne.some(term => command.toLowerCase().includes(term))) {
+            fillInputFields([1]);
+            return;
+        }
+
+        // Si la commande inclut "deux", forcer à 2
+        const spokenTwo = ["deux", "de"];
+        if (spokenTwo.some(term => command.toLowerCase().includes(term))) {
+            fillInputFields([2]);
+            return;
+        }
+
+        // Si plusieurs chiffres sont trouvés
+        const values = command.match(/\d+/g);
+        if (values) {
+            fillInputFields(values);
+        } else {
+            console.log('Aucune valeur trouvée dans la commande.');
+        }
+    }
+
+    // Fonction pour remplir les champs de saisie
+    function fillInputFields(values) {
+        values.forEach(value => {
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.tagName === 'INPUT' && activeElement.type === 'text') {
+                activeElement.value = value;
+                activeElement.dispatchEvent(new Event('input'));
+                speakValue(value);
+                simulateEnterKeyPress(activeElement);
+            }
+        });
+    }
+
+    // Simuler la touche "Entrée"
+    function simulateEnterKeyPress(inputElement) {
+        const event = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            bubbles: true
+        });
+        inputElement.dispatchEvent(event);
+    }
+
+    // Fonction pour gérer les cases à cocher
+    function handleCheckboxCommand(command, type) {
+        const positionMap = {
+            'mésio': 2,
+            'vestibulaire': 1,
+            'palatin': 1,
+            'disto': 0,
+            'distal': 0,
+            'mésial': 2, 
+            'méziale': 2, 
+            'métiale': 2, 
+            'méssiale': 2, 
+            'mézial': 2,  
+            'métial': 2,  
+            'méssial': 2  
+        };
+
+        const positionIdentifiers = command.match(/mésio|vestibulaire|palatin|disto|distal|mésial|méziale|métiale|méssiale|mézial|métial|méssial/g);
+        const rowIdentifier = command.match(/saignement|plaque/i);
+
+        if (positionIdentifiers && rowIdentifier) {
+            const table = document.activeElement.closest('table');
+            const columnIdx = document.activeElement.closest('td').cellIndex;
+            const rowIdx = type === "saignement" ? 4 : 5; 
+
+            const targetRow = table.querySelector(`tr:nth-child(${rowIdx})`);
+            const targetCell = targetRow.querySelector(`td:nth-child(${columnIdx + 1})`);
+            const checkboxes = targetCell.querySelectorAll('input[type="checkbox"]');
+
+            positionIdentifiers.forEach(identifier => {
+                const positionIdx = positionMap[identifier];
+                if (checkboxes && checkboxes[positionIdx]) {
+                    checkboxes[positionIdx].checked = !checkboxes[positionIdx].checked;
+                    checkboxes[positionIdx].dispatchEvent(new Event('change'));
+                }
+            });
+
+            speakCommand(`${type} ${positionIdentifiers.join(' ')}`);
+        }
+    }
+
+    // Prononcer la valeur
+    function speakValue(value) {
+        const utterance = new SpeechSynthesisUtterance(value);
+        utterance.lang = 'fr-FR';
+        speechSynthesis.speak(utterance);
+    }
+
+    // Prononcer la commande
+    function speakCommand(command) {
+        const utterance = new SpeechSynthesisUtterance(command);
+        utterance.lang = 'fr-FR';
+        speechSynthesis.speak(utterance);
+    }
+
+    // Initialisation de la reconnaissance vocale et des champs de saisie
+    document.addEventListener('DOMContentLoaded', function() {
+        inputs = document.querySelectorAll('input[type="text"]');
+        startVoiceRecognition();
+
+        inputs.forEach((input, index) => {
+            input.addEventListener('focus', () => {
+                currentInputIndex = index;
+            });
+            input.addEventListener('input', function() {
+                speakValue(this.value);
+            });
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    let nextInput = findNextVisibleInput(input.parentNode);
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                    } else {
+                        const targetRowIndex = input.closest('tr').rowIndex;
+                        const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
+                        const nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
+                        if (nextInput) {
+                            nextInput.focus();
+                            nextInput.select();
+                        }
+                    }
+                }
+            });
+        });
+    });
+
+    // Fonctions pour naviguer entre les champs de saisie
+    function findNextVisibleInput(startCell) {
+        let nextCell = startCell;
+        while (nextCell) {
+            nextCell = nextCell.nextElementSibling;
+            if (nextCell && nextCell.querySelector('input[type="text"]') && getComputedStyle(nextCell.querySelector('input[type="text"]')).visibility !== 'hidden') {
+                return nextCell.querySelector('input[type="text"]');
+            }
+        }
+        return null;
+    }
+
+    function findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex) {
+        const nextTableIndex = getNextTableIndex(currentTableIndex);
+        const nextTableContainer = document.getElementById(tableContainers[nextTableIndex]);
+        let nextInput = nextTableContainer.querySelector(`tr:nth-child(${targetRowIndex + 1}) td input[type="text"]:not([style*="visibility: hidden"])`);
+        if (!nextInput) {
+            nextInput = nextTableContainer.querySelector('tr td input[type="text"]:not([style*="visibility: hidden"])');
+        }
+        return nextInput;
+    }
+
+    function getNextTableIndex(currentTableIndex) {
+        return (currentTableIndex + 1) % tableContainers.length;
+    }
+
+    const tableContainers = ['table-container', 'second-table-container', 'third-table-container', 'quatre-table-container'];
+</script>
+
+
+
+
+
+<!--Fermeture menu humburger-->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const navbarToggler = document.getElementById('navbar-toggler');
+        const navbarNav = document.getElementById('navbarNav');
+
+        document.addEventListener('click', function(event) {
+            const isClickInside = navbarNav.contains(event.target) || navbarToggler.contains(event.target);
+
+            if (!isClickInside) {
+                // Si le clic est à l'extérieur du menu déroulant, fermer le menu
+                const bsCollapse = new bootstrap.Collapse(navbarNav, {
+                    toggle: false
+                });
+                bsCollapse.hide();
+            }
+        });
+
+        navbarToggler.addEventListener('click', function() {
+            const bsCollapse = new bootstrap.Collapse(navbarNav, {
+                toggle: false
+            });
+
+            if (navbarNav.classList.contains('show')) {
+                bsCollapse.hide();
+            } else {
+                bsCollapse.show();
+            }
+        });
+    });
+</script>
+
+<!--Nav bar disparait en scrollant vers le bas puis réapprait en allant tout en haut-->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const navbar = document.querySelector('.navbar');
+        
+        window.addEventListener('scroll', function () {
+            if (window.scrollY > 50) { // Ajustez la valeur selon vos besoins
+                navbar.classList.remove('fixed-top');
+            } else {
+                navbar.classList.add('fixed-top');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
