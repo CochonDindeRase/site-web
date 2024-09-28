@@ -158,17 +158,11 @@
 <script>
     let currentInputIndex = 0;
     let inputs;
-    let isProcessingCommand = false;  // Variable pour éviter les duplications
+    let isProcessingCommand = false;
 
     // Clé API Azure et région
     const subscriptionKey = "4d084ab2c53e4dbf9e491c0fe16507d6"; 
     const serviceRegion = "francecentral"; 
-
-    // Liste des numéros parlés autorisés
-    const allowedNumbers = [
-        "zéro", "un", "une", "deux", "de", "premier", "in", "hein", "um", "hun", "hin", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf",
-        "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf", "vingt"
-    ];
 
     // Fonction pour démarrer la reconnaissance vocale avec Microsoft Azure Speech to Text
     function startVoiceRecognition() {
@@ -214,6 +208,17 @@
                 console.error("Accès au microphone refusé :", err);
                 alert("Veuillez autoriser l'accès au microphone pour utiliser l'assistance vocale.");
             });
+    }
+
+    // Fonction pour débloquer la synthèse vocale (haut-parleurs) après une interaction utilisateur
+    function unlockAudioContext() {
+        document.body.addEventListener('click', function() {
+            // Créer un Utterance vide juste pour initialiser le contexte audio
+            const utterance = new SpeechSynthesisUtterance('');
+            utterance.lang = 'fr-FR';
+            speechSynthesis.speak(utterance);
+            console.log('Haut-parleurs débloqués via interaction utilisateur');
+        }, { once: true });
     }
 
     // Fonction pour traiter les commandes prioritaires (1 et 2)
@@ -345,49 +350,36 @@
 
     // Initialisation de la reconnaissance vocale et des champs de saisie
     document.addEventListener('DOMContentLoaded', function() {
-    inputs = document.querySelectorAll('input[type="text"]');
-    initialiserMicrophone(); // Demande l'accès au micro pour smartphone et autres
+        inputs = document.querySelectorAll('input[type="text"]');
+        initialiserMicrophone(); // Demande l'accès au micro pour smartphone et autres
+        unlockAudioContext(); // Débloque les hauts-parleurs
 
-    // Activer les haut-parleurs après la première interaction utilisateur
-    document.body.addEventListener('click', unlockAudioContext, { once: true });
-    document.body.addEventListener('touchstart', unlockAudioContext, { once: true });
-
-    inputs.forEach((input, index) => {
-        input.addEventListener('focus', () => {
-            currentInputIndex = index;
-        });
-        input.addEventListener('input', function() {
-            speakValue(this.value); // Prononcer la valeur
-        });
-        input.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                let nextInput = findNextVisibleInput(input.parentNode);
-                if (nextInput) {
-                    nextInput.focus();
-                    nextInput.select();
-                } else {
-                    const targetRowIndex = input.closest('tr').rowIndex;
-                    const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
-                    const nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
+        inputs.forEach((input, index) => {
+            input.addEventListener('focus', () => {
+                currentInputIndex = index;
+            });
+            input.addEventListener('input', function() {
+                speakValue(this.value);
+            });
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    let nextInput = findNextVisibleInput(input.parentNode);
                     if (nextInput) {
                         nextInput.focus();
                         nextInput.select();
+                    } else {
+                        const targetRowIndex = input.closest('tr').rowIndex;
+                        const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
+                        const nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
+                        if (nextInput) {
+                            nextInput.focus();
+                            nextInput.select();
+                        }
                     }
                 }
-            }
+            });
         });
     });
-});
-
-// Fonction pour débloquer l'audio sur les appareils mobiles après la première interaction utilisateur
-function unlockAudioContext() {
-    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.getVoices().length > 0) {
-        console.log("Synthèse vocale débloquée.");
-    } else {
-        console.log("Synthèse vocale indisponible.");
-    }
-}
-
 
     // Fonctions pour naviguer entre les champs de saisie
     function findNextVisibleInput(startCell) {
