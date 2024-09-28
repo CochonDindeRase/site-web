@@ -151,6 +151,10 @@
         });
     </script>
 
+
+
+
+<!--Assistance Vocale-->
 <script>
     let currentInputIndex = 0;
     let inputs;
@@ -165,37 +169,46 @@
         "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf", "vingt"
     ];
 
+
+    function initialiserMicrophone() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(stream) {
+            console.log("Accès au microphone accordé.");
+            startVoiceRecognition(); // Démarre la reconnaissance vocale après avoir obtenu l'autorisation
+        })
+        .catch(function(err) {
+            console.error("Accès au microphone refusé :", err);
+            alert("Veuillez autoriser l'accès au microphone pour utiliser l'assistance vocale.");
+        });
+}
+
     // Fonction pour démarrer la reconnaissance vocale avec Microsoft Azure Speech to Text
     function startVoiceRecognition() {
-        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion);
-        speechConfig.speechRecognitionLanguage = "fr-FR"; 
-        const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput(); 
-        const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion);
+    speechConfig.speechRecognitionLanguage = "fr-FR"; 
+    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
 
-        recognizer.startContinuousRecognitionAsync(); 
+    recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 
-        recognizer.recognized = function (s, event) {
-            const command = event.result.text.trim();
-            console.log('Résultat de la reconnaissance vocale:', command);
+    recognizer.startContinuousRecognitionAsync(); // Démarre la reconnaissance vocale automatiquement après autorisation
 
-            // Si la commande contient 1 ou 2, traiter immédiatement
-            if (command.toLowerCase().includes("un") || command.toLowerCase().includes("une") || command.toLowerCase().includes("deux") || command.toLowerCase().includes("de")) {
-                processImmediateCommand(command);  // Processus accéléré
-            } else {
-                processVoiceCommand(command);  // Processus normal
-            }
-        };
+    recognizer.recognized = function (s, event) {
+        const command = event.result.text.trim();
+        console.log('Résultat de la reconnaissance vocale:', command);
+        processVoiceCommand(command); // Traite la commande vocale captée
+    };
 
-        recognizer.onerror = function(event) {
-            console.error('Erreur de reconnaissance vocale:', event.error);
-        };
+    recognizer.onerror = function(event) {
+        console.error('Erreur de reconnaissance vocale:', event.error);
+    };
 
-        recognizer.onend = function() {
-            setTimeout(() => {
-                recognizer.start();
-            }, 50); // Délai réduit pour plus de fluidité
-        };
-    }
+    recognizer.onend = function() {
+        setTimeout(() => {
+            recognizer.start();
+        }, 50); // Relance la reconnaissance vocale après chaque saisie
+    };
+}
+
 
     // Fonction pour traiter les commandes prioritaires (1 et 2)
     function processImmediateCommand(command) {
@@ -399,6 +412,11 @@
     }
 
     const tableContainers = ['table-container', 'second-table-container', 'third-table-container', 'quatre-table-container'];
+
+    document.addEventListener('DOMContentLoaded', function() {
+    initialiserMicrophone(); // Demande l'autorisation du micro et démarre l'assistance vocale
+});
+
 </script>
 
 
