@@ -197,18 +197,27 @@
         };
     }
 
-    // Fonction pour demander les permissions pour le microphone
-    function initialiserMicrophone() {
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(function(stream) {
-                console.log("Accès au microphone accordé.");
-                startVoiceRecognition(); // Démarre la reconnaissance vocale après avoir obtenu l'autorisation
-            })
-            .catch(function(err) {
-                console.error("Accès au microphone refusé :", err);
-                alert("Veuillez autoriser l'accès au microphone pour utiliser l'assistance vocale.");
-            });
-    }
+// Fonction pour détecter si l'appareil est un smartphone
+function isMobileDevice() {
+    return /Mobi|Android/i.test(navigator.userAgent);
+}
+
+// Fonction pour demander les permissions pour le microphone si nécessaire
+function initialiserMicrophone() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(stream) {
+            console.log("Accès au microphone accordé.");
+            startVoiceRecognition();  // Démarre la reconnaissance vocale après avoir obtenu l'autorisation
+        })
+        .catch(function(err) {
+            console.error("Accès au microphone refusé ou bloqué : ", err);
+            if (isMobileDevice()) {
+                alert("L'accès au microphone est nécessaire pour utiliser l'assistance vocale sur mobile.");
+            } else {
+                console.warn("L'accès au microphone est requis pour la reconnaissance vocale.");
+            }
+        });
+}
 
     // Fonction pour débloquer la synthèse vocale (haut-parleurs) après une interaction utilisateur
     function unlockAudioContext() {
@@ -350,36 +359,36 @@
 
     // Initialisation de la reconnaissance vocale et des champs de saisie
     document.addEventListener('DOMContentLoaded', function() {
-        inputs = document.querySelectorAll('input[type="text"]');
-        initialiserMicrophone(); // Demande l'accès au micro pour smartphone et autres
-        unlockAudioContext(); // Débloque les hauts-parleurs
+    inputs = document.querySelectorAll('input[type="text"]');
+    unlockAudioContext();  // Débloque les hauts-parleurs
+    initialiserMicrophone();  // Appelle la fonction pour ordinateur et mobile
 
-        inputs.forEach((input, index) => {
-            input.addEventListener('focus', () => {
-                currentInputIndex = index;
-            });
-            input.addEventListener('input', function() {
-                speakValue(this.value);
-            });
-            input.addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
-                    let nextInput = findNextVisibleInput(input.parentNode);
+    inputs.forEach((input, index) => {
+        input.addEventListener('focus', () => {
+            currentInputIndex = index;
+        });
+        input.addEventListener('input', function() {
+            speakValue(this.value);
+        });
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                let nextInput = findNextVisibleInput(input.parentNode);
+                if (nextInput) {
+                    nextInput.focus();
+                    nextInput.select();
+                } else {
+                    const targetRowIndex = input.closest('tr').rowIndex;
+                    const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
+                    const nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
                     if (nextInput) {
                         nextInput.focus();
                         nextInput.select();
-                    } else {
-                        const targetRowIndex = input.closest('tr').rowIndex;
-                        const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
-                        const nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
-                        if (nextInput) {
-                            nextInput.focus();
-                            nextInput.select();
-                        }
                     }
                 }
-            });
+            }
         });
     });
+});
 
     // Fonctions pour naviguer entre les champs de saisie
     function findNextVisibleInput(startCell) {
