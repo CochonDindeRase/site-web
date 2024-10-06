@@ -164,129 +164,70 @@
     const subscriptionKey = "4d084ab2c53e4dbf9e491c0fe16507d6"; 
     const serviceRegion = "francecentral"; 
 
-    // Fonction pour démarrer la reconnaissance vocale avec Microsoft Azure Speech to Text
+    // Démarrer la reconnaissance vocale
     function startVoiceRecognition() {
         const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion);
-        speechConfig.speechRecognitionLanguage = "fr-FR"; 
-        const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput(); 
+        speechConfig.speechRecognitionLanguage = "fr-FR";
+        const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
         const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 
-        recognizer.startContinuousRecognitionAsync(); 
+        recognizer.startContinuousRecognitionAsync();
 
-        recognizer.recognized = function (s, event) {
-            if (isProcessingCommand) return;  // Éviter les duplications
-            const command = event.result.text.trim();
+        recognizer.recognized = (s, event) => {
+            if (isProcessingCommand) return;
+            const command = event.result.text.trim().toLowerCase();
             console.log('Résultat de la reconnaissance vocale:', command);
-
-            // Si la commande contient 1 ou 2, traiter immédiatement
-            if (command.toLowerCase().includes("un") || command.toLowerCase().includes("une") || command.toLowerCase().includes("deux") || command.toLowerCase().includes("de")) {
-                processImmediateCommand(command);
-            } else {
-                processVoiceCommand(command);  // Processus normal
-            }
+            processVoiceCommand(command);
         };
 
-        recognizer.onerror = function(event) {
-            console.error('Erreur de reconnaissance vocale:', event.error);
-        };
-
-        recognizer.onend = function() {
-            setTimeout(() => {
-                recognizer.start();
-            }, 50); // Délai réduit pour plus de fluidité
-        };
+        recognizer.onerror = (event) => console.error('Erreur de reconnaissance vocale:', event.error);
+        recognizer.onend = () => setTimeout(() => recognizer.start(), 50);
     }
 
-// Fonction pour détecter si l'appareil est un smartphone
-function isMobileDevice() {
-    return /Mobi|Android/i.test(navigator.userAgent);
-}
+    // Initialiser le microphone
+    function initialiserMicrophone() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then((stream) => {
+                console.log("Accès au microphone accordé.");
+                startVoiceRecognition();
+            })
+            .catch((err) => {
+                console.error("Accès au microphone refusé ou bloqué :", err);
+                alert("L'accès au microphone est requis pour utiliser l'assistance vocale.");
+            });
+    }
 
-// Fonction pour demander les permissions pour le microphone si nécessaire
-function initialiserMicrophone() {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(function(stream) {
-            console.log("Accès au microphone accordé.");
-            startVoiceRecognition();  // Démarre la reconnaissance vocale après avoir obtenu l'autorisation
-        })
-        .catch(function(err) {
-            console.error("Accès au microphone refusé ou bloqué : ", err);
-            if (isMobileDevice()) {
-                alert("L'accès au microphone est nécessaire pour utiliser l'assistance vocale sur mobile.");
-            } else {
-                console.warn("L'accès au microphone est requis pour la reconnaissance vocale.");
-            }
-        });
-}
-
-    // Fonction pour débloquer la synthèse vocale (haut-parleurs) après une interaction utilisateur
+    // Débloquer la synthèse vocale (haut-parleurs)
     function unlockAudioContext() {
-        document.body.addEventListener('click', function() {
-            // Créer un Utterance vide juste pour initialiser le contexte audio
+        document.body.addEventListener('click', () => {
             const utterance = new SpeechSynthesisUtterance('');
-            utterance.lang = 'fr-FR';
             speechSynthesis.speak(utterance);
             console.log('Haut-parleurs débloqués via interaction utilisateur');
         }, { once: true });
     }
 
-    // Fonction pour traiter les commandes prioritaires (1 et 2)
-    function processImmediateCommand(command) {
-        isProcessingCommand = true;  // Empêcher les commandes en double
-        console.log("Commande prioritaire pour les valeurs 1 et 2:", command);
-        const spokenOne = ["un", "une"];
-        const spokenTwo = ["deux", "de"];
-
-        if (spokenOne.some(term => command.toLowerCase().includes(term))) {
-            fillInputFields([1]);
-        } else if (spokenTwo.some(term => command.toLowerCase().includes(term))) {
-            fillInputFields([2]);
-        }
-        setTimeout(() => { isProcessingCommand = false; }, 500);  // Délai pour éviter les doublons
-    }
-
-    // Fonction pour traiter la commande vocale générale
+    // Traiter les commandes vocales
     function processVoiceCommand(command) {
-        isProcessingCommand = true;  // Bloquer les autres commandes pendant le traitement
-        console.log('Commande vocale reçue:', command);
-
-        // Vérifier si la commande inclut "saignement", "saignements" ou "plaque"
-        if (command.toLowerCase().includes("saignement") || command.toLowerCase().includes("saignements") || command.toLowerCase().includes("plaque")) {
-            const type = command.toLowerCase().includes("saignement") || command.toLowerCase().includes("saignements") ? "saignement" : "plaque";
-
-            // Vérifier les positions comme palatin, mésio, etc.
-            if (command.toLowerCase().includes("palatin") || 
-                command.toLowerCase().includes("mésio") || 
-                command.toLowerCase().includes("vestibulaire") || 
-                command.toLowerCase().includes("disto") || 
-                command.toLowerCase().includes("mésial") || 
-                command.toLowerCase().includes("distal") || 
-                command.toLowerCase().includes("méziale") || 
-                command.toLowerCase().includes("métiale") || 
-                command.toLowerCase().includes("méssiale") || 
-                command.toLowerCase().includes("mézial") || 
-                command.toLowerCase().includes("métial") || 
-                command.toLowerCase().includes("méssial")) {
-                handleCheckboxCommand(command, type);
-            }
+        isProcessingCommand = true;
+        if (command.includes("un") || command.includes("une")) {
+            fillInputFields([1]);
+        } else if (command.includes("deux") || command.includes("de")) {
+            fillInputFields([2]);
+        } else if (command.match(/saignement|plaque/)) {
+            handleCheckboxCommand(command);
         } else {
-            // Si plusieurs chiffres sont trouvés
             const values = command.match(/\d+/g);
-            if (values) {
-                fillInputFields(values);
-            } else {
-                console.log('Aucune valeur trouvée dans la commande.');
-            }
+            if (values) fillInputFields(values);
+            else console.log('Aucune valeur trouvée dans la commande.');
         }
-
-        setTimeout(() => { isProcessingCommand = false; }, 500);  // Relâcher après un court délai
+        setTimeout(() => isProcessingCommand = false, 500);
     }
 
-    // Fonction pour remplir les champs de saisie
+    // Remplir les champs de saisie
     function fillInputFields(values) {
-        const activeElement = document.activeElement;  // Obtenez l'élément actif au moment de la reconnaissance
+        const activeElement = document.activeElement;
         if (activeElement && activeElement.tagName === 'INPUT' && activeElement.type === 'text') {
-            activeElement.value = values[0];  // Remplir le champ uniquement avec la première valeur
+            activeElement.value = values[0];
             activeElement.dispatchEvent(new Event('input'));
             speakValue(values[0]);
             simulateEnterKeyPress(activeElement);
@@ -295,28 +236,16 @@ function initialiserMicrophone() {
 
     // Simuler la touche "Entrée"
     function simulateEnterKeyPress(inputElement) {
-        const event = new KeyboardEvent('keydown', {
-            key: 'Enter',
-            bubbles: true
-        });
+        const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
         inputElement.dispatchEvent(event);
     }
 
-    // Fonction pour gérer les cases à cocher
-    function handleCheckboxCommand(command, type) {
+    // Gérer les cases à cocher
+    function handleCheckboxCommand(command) {
         const positionMap = {
-            'mésio': 2,
-            'vestibulaire': 1,
-            'palatin': 1,
-            'disto': 0,
-            'distal': 0,
-            'mésial': 2, 
-            'méziale': 2, 
-            'métiale': 2, 
-            'méssiale': 2, 
-            'mézial': 2,  
-            'métial': 2,  
-            'méssial': 2  
+            'mésio': 2, 'vestibulaire': 1, 'palatin': 1, 'disto': 0, 'distal': 0,
+            'mésial': 2, 'méziale': 2, 'métiale': 2, 'méssiale': 2, 'mézial': 2,
+            'métial': 2, 'méssial': 2
         };
 
         const positionIdentifiers = command.match(/mésio|vestibulaire|palatin|disto|distal|mésial|méziale|métiale|méssiale|mézial|métial|méssial/g);
@@ -325,13 +254,12 @@ function initialiserMicrophone() {
         if (positionIdentifiers && rowIdentifier) {
             const table = document.activeElement.closest('table');
             const columnIdx = document.activeElement.closest('td').cellIndex;
-            const rowIdx = type === "saignement" ? 4 : 5; 
-
+            const rowIdx = rowIdentifier[0].toLowerCase() === "saignement" ? 4 : 5;
             const targetRow = table.querySelector(`tr:nth-child(${rowIdx})`);
             const targetCell = targetRow.querySelector(`td:nth-child(${columnIdx + 1})`);
             const checkboxes = targetCell.querySelectorAll('input[type="checkbox"]');
 
-            positionIdentifiers.forEach(identifier => {
+            positionIdentifiers.forEach((identifier) => {
                 const positionIdx = positionMap[identifier];
                 if (checkboxes && checkboxes[positionIdx]) {
                     checkboxes[positionIdx].checked = !checkboxes[positionIdx].checked;
@@ -339,7 +267,7 @@ function initialiserMicrophone() {
                 }
             });
 
-            speakCommand(`${type} ${positionIdentifiers.join(' ')}`);
+            speakCommand(`${rowIdentifier} ${positionIdentifiers.join(' ')}`);
         }
     }
 
@@ -357,40 +285,36 @@ function initialiserMicrophone() {
         speechSynthesis.speak(utterance);
     }
 
-    // Initialisation de la reconnaissance vocale et des champs de saisie
-    document.addEventListener('DOMContentLoaded', function() {
-    inputs = document.querySelectorAll('input[type="text"]');
-    unlockAudioContext();  // Débloque les hauts-parleurs
-    initialiserMicrophone();  // Appelle la fonction pour ordinateur et mobile
+    // Initialisation des champs de saisie
+    document.addEventListener('DOMContentLoaded', () => {
+        inputs = document.querySelectorAll('input[type="text"]');
+        unlockAudioContext();
+        initialiserMicrophone();
 
-    inputs.forEach((input, index) => {
-        input.addEventListener('focus', () => {
-            currentInputIndex = index;
-        });
-        input.addEventListener('input', function() {
-            speakValue(this.value);
-        });
-        input.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                let nextInput = findNextVisibleInput(input.parentNode);
-                if (nextInput) {
-                    nextInput.focus();
-                    nextInput.select();
-                } else {
-                    const targetRowIndex = input.closest('tr').rowIndex;
-                    const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
-                    const nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
+        inputs.forEach((input, index) => {
+            input.addEventListener('focus', () => currentInputIndex = index);
+            input.addEventListener('input', () => speakValue(input.value));
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    let nextInput = findNextVisibleInput(input.parentNode);
                     if (nextInput) {
                         nextInput.focus();
                         nextInput.select();
+                    } else {
+                        const targetRowIndex = input.closest('tr').rowIndex;
+                        const currentTableIndex = tableContainers.indexOf(input.closest('table').parentNode.id);
+                        nextInput = findFirstVisibleInputInNextTable(currentTableIndex, targetRowIndex);
+                        if (nextInput) {
+                            nextInput.focus();
+                            nextInput.select();
+                        }
                     }
                 }
-            }
+            });
         });
     });
-});
 
-    // Fonctions pour naviguer entre les champs de saisie
+    // Navigation entre les champs de saisie
     function findNextVisibleInput(startCell) {
         let nextCell = startCell;
         while (nextCell) {
@@ -406,9 +330,7 @@ function initialiserMicrophone() {
         const nextTableIndex = getNextTableIndex(currentTableIndex);
         const nextTableContainer = document.getElementById(tableContainers[nextTableIndex]);
         let nextInput = nextTableContainer.querySelector(`tr:nth-child(${targetRowIndex + 1}) td input[type="text"]:not([style*="visibility: hidden"])`);
-        if (!nextInput) {
-            nextInput = nextTableContainer.querySelector('tr td input[type="text"]:not([style*="visibility: hidden"])');
-        }
+        if (!nextInput) nextInput = nextTableContainer.querySelector('tr td input[type="text"]:not([style*="visibility: hidden"])');
         return nextInput;
     }
 
@@ -418,7 +340,6 @@ function initialiserMicrophone() {
 
     const tableContainers = ['table-container', 'second-table-container', 'third-table-container', 'quatre-table-container'];
 </script>
-
 
 
 
