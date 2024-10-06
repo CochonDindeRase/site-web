@@ -1060,3 +1060,4 @@ async function generateAndSavePDF(autoPrint) {
       console.error("Erreur lors de la capture de la section:", error);
   }
 }
+
